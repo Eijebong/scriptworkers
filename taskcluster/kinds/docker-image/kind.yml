@@ -10,6 +10,6 @@ transforms:
     - eije_taskgraph.transforms.common:transforms
 
 tasks:
-    scriptworker: {}
+    scriptworker-base: {}
     argocd-webhook:
-      parent: scriptworker
+      parent: scriptworker-base
