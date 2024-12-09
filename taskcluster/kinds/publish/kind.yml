@@ -15,6 +15,6 @@ task-defaults:
   run-on-git-branches: ["main"]
 
 tasks:
-  bananium:
-    repo: ghcr.io/eijebong/bananium.rs
+  argocd-webhook:
+    repo: ghcr.io/eijebong/scriptworkers
     secret: github_deploy
