@@ -16,5 +16,5 @@ task-defaults:
 
 tasks:
   argocd-webhook:
-    repo: ghcr.io/eijebong/scriptworkers
+    repo: ghcr.io/eijebong/scriptworkers/argocd-webhook
     secret: github_deploy
