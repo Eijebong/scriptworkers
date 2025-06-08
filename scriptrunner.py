@@ -1,5 +1,6 @@
-import os.path
+import os
 import subprocess
+import jsone
 
 CONFIG = """provisioner_id: scriptworker
 worker_group: scriptworker
@@ -11,7 +12,7 @@ taskcluster_root_url: https://taskcluster.bananium.fr
 artifact_upload_timeout: 1200
 task_max_timeout: 1200
 
-task_script: ["bash", "./{task_script}.sh"]
+task_script: ["bash", "-c", "cd {task_script} && ./run.sh config.json"]
 
 verbose: true
 
@@ -34,11 +35,20 @@ task_log_dir: "/tmp/artifact/public/logs"
 
 script_name=os.environ["WORKER_TYPE"]
 
-with open(os.path.expanduser("~/scriptworker.yaml"), "w") as fd:
+with open("scriptworker.yaml", "w") as fd:
     fd.write(CONFIG.format(
         worker_type=script_name,
         worker_id=script_name,
         task_script=script_name,
     ))
+
+
+if os.path.isfile(os.path.join(script_name, "config.json.tpl")):
+    with open(os.path.join(script_name, "config.json.tpl")) as fd:
+        context = os.environ.copy()
+        rendered_config = jsone.render(fd.read(), context)
+
+    with open(os.path.join(script_name, "config.json"), "w") as fd:
+        fd.write(rendered_config)
 
 subprocess.run("scriptworker")

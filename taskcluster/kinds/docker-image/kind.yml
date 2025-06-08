@@ -13,3 +13,5 @@ tasks:
     scriptworker-base: {}
     argocd-webhook:
       parent: scriptworker-base
+    githubscript:
+      parent: scriptworker-base
