@@ -11,6 +11,7 @@ transforms:
 
 tasks:
     scriptworker-base: {}
+    python-test: {}
     argocd-webhook:
       parent: scriptworker-base
     githubscript:

@@ -1,0 +1,29 @@
+loader: taskgraph.loader.transform:loader
+
+transforms:
+  - taskgraph.transforms.run
+  - taskgraph.transforms.task
+  - eije_taskgraph.transforms.common
+
+kind-dependencies:
+  - docker-image
+
+task-defaults:
+  worker-type: "linux-small"
+  run-on-tasks-for: ["github-push"]
+  run-on-git-branches: ["main"]
+  worker:
+    max-run-time: 1800
+    docker-image: { in-tree: python-test }
+
+tasks:
+  githubscript:
+    description: Runs python tests for githubscript
+    run:
+      use-caches: [uv, checkout]
+      using: run-task
+      command: |
+        cd ${VCS_PATH}/githubscript && uv run pytest
+
+
+
