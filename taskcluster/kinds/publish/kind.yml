@@ -8,6 +8,7 @@ transforms:
 
 kind-dependencies:
   - docker-image
+  - tests
 
 task-defaults:
   worker-type: "linux-small"
@@ -19,6 +20,8 @@ tasks:
     repo: ghcr.io/eijebong/scriptworkers/argocd-webhook
     secret: github_deploy
   githubscript:
+    dependencies:
+      tests: tests-githubscript
     repo: ghcr.io/eijebong/scriptworkers/githubscript
     secret: github_deploy
 
