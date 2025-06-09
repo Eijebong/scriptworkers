@@ -1,5 +1,8 @@
 from scriptworker.exceptions import TaskVerificationError
 from taskcluster import Queue
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def create_apdiff_comment_on_pr(context, args):
@@ -11,11 +14,15 @@ async def create_apdiff_comment_on_pr(context, args):
     except ValueError:
         raise TaskVerificationError("The given PR number isn't an int")
 
+    logger.info("Creating apdiff comment for PR %s" % pr_number)
+
     payload = context.task["payload"]
     if "diff-task" not in payload:
         raise TaskVerificationError("diff-task is missing from the payload")
 
     diff_task_id = payload["diff-task"]
+
+    logger.debug("Diff task ID is %s" % diff_task_id)
     queue = Queue(
         {
             "rootUrl": context.config["taskcluster_root_url"],
@@ -34,9 +41,12 @@ async def create_apdiff_comment_on_pr(context, args):
     else:
         comment = "No reviewable change"
 
+
     owner = context.config["target"]["owner"]
     repo = context.config["target"]["repo"]
     path = f"/repos/{owner}/{repo}/issues/{pr_number}/comments"
+
+    logging.info("Creating github comment on %s/%s with content %s" % (owner, repo, comment))
 
     data = {"body": comment}
 
