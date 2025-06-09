@@ -1,4 +1,4 @@
-FROM lol
+FROM $DOCKER_IMAGE_PARENT
 
 # %include githubscript
 COPY --chown=worker:worker /topsrcdir/githubscript /home/worker/githubscript
