@@ -4,8 +4,8 @@ import jsone
 
 CONFIG = """provisioner_id: scriptworker
 worker_group: scriptworker
-worker_type: {worker_type}-dev
-worker_id: {worker_id}-dev
+worker_type: {worker_type}
+worker_id: {worker_id}
 taskcluster_root_url: https://taskcluster.bananium.fr
 
 
