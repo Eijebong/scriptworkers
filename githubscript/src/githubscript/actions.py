@@ -60,7 +60,7 @@ async def create_apdiff_comment_on_pr(context, args):
     data = {"body": comment}
 
     resp = await context.github.post(path, data=data)
-    await resp.raise_for_status()
+    resp.raise_for_status()
 
 
 def apply_patch(context, args):

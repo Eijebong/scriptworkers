@@ -23,6 +23,7 @@ def _get_task_context():
     }
 
     context.github = AsyncMock()
+    context.github.post.return_value = Mock()
 
     return context
 
