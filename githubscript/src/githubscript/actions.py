@@ -1,6 +1,7 @@
 from scriptworker.exceptions import TaskVerificationError
 from taskcluster import Queue
 import logging
+from .utils import is_task_coming_from_pr
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,15 @@ async def create_apdiff_comment_on_pr(context, args):
         pr_number = int(args[0])
     except ValueError:
         raise TaskVerificationError("The given PR number isn't an int")
+
+    owner = context.config["target"]["owner"]
+    repo = context.config["target"]["repo"]
+    task_id = context.task["taskGroupId"]
+
+    if not is_task_coming_from_pr(context, task_id, owner, repo, pr_number):
+        raise TaskVerificationError(
+            f"This task was scheduled for pr {pr_number} but it doesn't seem to be coming from it"
+        )
 
     logger.info("Creating apdiff comment for PR %s" % pr_number)
 
@@ -41,18 +51,16 @@ async def create_apdiff_comment_on_pr(context, args):
     else:
         comment = "No reviewable change"
 
-
-    owner = context.config["target"]["owner"]
-    repo = context.config["target"]["repo"]
     path = f"/repos/{owner}/{repo}/issues/{pr_number}/comments"
 
-    logging.info("Creating github comment on %s/%s with content %s" % (owner, repo, comment))
+    logging.info(
+        "Creating github comment on %s/%s with content %s" % (owner, repo, comment)
+    )
 
     data = {"body": comment}
 
     resp = await context.github.post(path, data=data)
-    resp.raise_for_status()
-
+    await resp.raise_for_status()
 
 
 def apply_patch(context, args):

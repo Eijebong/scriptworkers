@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, patch
 
 
 async def call_main(repo, actions):
-    context = Context
+    context = Context()
 
     context.task = {
         "scopes": [

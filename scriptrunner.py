@@ -4,8 +4,8 @@ import jsone
 
 CONFIG = """provisioner_id: scriptworker
 worker_group: scriptworker
-worker_type: {worker_type}
-worker_id: {worker_id}
+worker_type: {worker_type}-dev
+worker_id: {worker_id}-dev
 taskcluster_root_url: https://taskcluster.bananium.fr
 
 
@@ -33,14 +33,16 @@ artifact_dir: "/tmp/artifact"
 task_log_dir: "/tmp/artifact/public/logs"
 """
 
-script_name=os.environ["WORKER_TYPE"]
+script_name = os.environ["WORKER_TYPE"]
 
 with open("scriptworker.yaml", "w") as fd:
-    fd.write(CONFIG.format(
-        worker_type=script_name,
-        worker_id=script_name,
-        task_script=script_name,
-    ))
+    fd.write(
+        CONFIG.format(
+            worker_type=script_name,
+            worker_id=script_name,
+            task_script=script_name,
+        )
+    )
 
 
 if os.path.isfile(os.path.join(script_name, "config.json.tpl")):

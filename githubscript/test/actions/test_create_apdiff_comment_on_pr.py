@@ -12,7 +12,7 @@ def _get_task_context():
     context = Context()
     payload = {"diff-task": "abc"}
 
-    context.task = {"payload": payload}
+    context.task = {"payload": payload, "taskGroupId": "UCy202ZHSL-t1AIHG9f2aw"}
 
     context.config = {
         "taskcluster_root_url": "http://nowhere",
@@ -30,6 +30,9 @@ def _get_task_context():
 MOCK_QUEUE = Mock()
 MOCK_QUEUE.return_value.listLatestArtifacts.return_value = {"artifacts": []}
 
+MOCK_UTILS_IS_TASK_COMING_FROM_PR = Mock()
+MOCK_UTILS_IS_TASK_COMING_FROM_PR.return_value = True
+
 
 @pytest.mark.parametrize(
     "params,expectation",
@@ -41,6 +44,7 @@ MOCK_QUEUE.return_value.listLatestArtifacts.return_value = {"artifacts": []}
     ),
 )
 @patch("githubscript.actions.Queue", MOCK_QUEUE)
+@patch("githubscript.actions.is_task_coming_from_pr", MOCK_UTILS_IS_TASK_COMING_FROM_PR)
 @pytest.mark.asyncio
 async def test_args(params, expectation):
     context = _get_task_context()
@@ -49,6 +53,7 @@ async def test_args(params, expectation):
 
 
 @patch("githubscript.actions.Queue", MOCK_QUEUE)
+@patch("githubscript.actions.is_task_coming_from_pr", MOCK_UTILS_IS_TASK_COMING_FROM_PR)
 @pytest.mark.asyncio
 async def test_schema():
     context = _get_task_context()
@@ -58,6 +63,7 @@ async def test_schema():
 
 
 @pytest.mark.asyncio
+@patch("githubscript.actions.is_task_coming_from_pr", MOCK_UTILS_IS_TASK_COMING_FROM_PR)
 async def test_empty_diff():
     context = _get_task_context()
     MOCK_QUEUE.reset_mock()
@@ -74,6 +80,7 @@ async def test_empty_diff():
 
 
 @pytest.mark.asyncio
+@patch("githubscript.actions.is_task_coming_from_pr", MOCK_UTILS_IS_TASK_COMING_FROM_PR)
 async def test_normal_diff():
     context = _get_task_context()
     MOCK_QUEUE.reset_mock()
@@ -88,3 +95,23 @@ async def test_normal_diff():
         "/repos/foo/bar/issues/97/comments",
         data={"body": "[Review changes](https://apdiff.bananium.fr/abc)"},
     )
+
+
+@pytest.mark.asyncio
+async def test_refuse_for_wrong_pr():
+    context = _get_task_context()
+    MOCK_QUEUE.reset_mock()
+
+    task_not_coming_from_pr = Mock()
+    task_not_coming_from_pr.return_value = False
+
+    with patch("githubscript.actions.Queue", MOCK_QUEUE), patch(
+        "githubscript.actions.is_task_coming_from_pr", task_not_coming_from_pr
+    ), pytest.raises(TaskVerificationError):
+        await create_apdiff_comment_on_pr(context, ["97"])
+
+    task_not_coming_from_pr.assert_called_with(
+        context, "UCy202ZHSL-t1AIHG9f2aw", "foo", "bar", 97
+    )
+    MOCK_QUEUE.return_value.listLatestArtifacts.assert_not_called()
+    context.github.post.assert_not_called()
