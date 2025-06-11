@@ -103,6 +103,8 @@ async def test_aptest():
     with patch("githubscript.actions.Queue", MOCK_QUEUE):
         await create_aptest_comment_on_pr(context, ["97"])
 
+    MOCK_QUEUE.return_value.getLatestArtifact.assert_called_with("abc", "foo.aptest")
+
     context.github.post.assert_called_with(
         "/repos/foo/bar/issues/97/comments",
         data={
