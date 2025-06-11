@@ -101,7 +101,7 @@ async def create_aptest_comment_on_pr(context, args):
     found_test = None
     for artifact in artifacts:
         if artifact["name"].endswith(".aptest"):
-            found_test = artifact
+            found_test = artifact["name"]
             break
 
     if found_test:
