@@ -2,6 +2,7 @@ from scriptworker.exceptions import TaskVerificationError
 from taskcluster import Queue
 import logging
 from .utils import is_task_coming_from_pr
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +109,7 @@ async def create_aptest_comment_on_pr(context, args):
         aptest_url = queue.getLatestArtifact(test_task_id, found_test)["url"]
         async with context.session.get(aptest_url) as r:
             r.raise_for_status()
-            aptest_info = await r.json()
+            aptest_info = json.load(await r.read().decode())
             apworld_name = aptest_info["apworld"]
             apworld_version = aptest_info["version"]
 
