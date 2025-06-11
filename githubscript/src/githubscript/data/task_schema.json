@@ -15,6 +15,9 @@
             "properties": {
                 "diff-task": {
                     "type": "string"
+                },
+                "test-task": {
+                    "type": "string"
                 }
             },
             "additionalProperties": false
