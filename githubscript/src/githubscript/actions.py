@@ -15,6 +15,9 @@ async def create_apdiff_comment_on_pr(context, args):
     except ValueError:
         raise TaskVerificationError("The given PR number isn't an int")
 
+    if pr_number <= 0:
+        raise TaskVerificationError(f"The PR number {pr_number} is wrong")
+
     owner = context.config["target"]["owner"]
     repo = context.config["target"]["repo"]
     task_id = context.task["taskGroupId"]

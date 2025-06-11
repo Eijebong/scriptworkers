@@ -42,6 +42,7 @@ MOCK_UTILS_IS_TASK_COMING_FROM_PR.return_value = True
         pytest.param(["1", "2"], raises(TaskVerificationError)),
         pytest.param(["a"], raises(TaskVerificationError)),
         pytest.param(["1"], does_not_raise()),
+        pytest.param(["-1"], raises(TaskVerificationError)),
     ),
 )
 @patch("githubscript.actions.Queue", MOCK_QUEUE)
