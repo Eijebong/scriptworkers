@@ -1,0 +1,23 @@
+{
+    "title": "Githubscript task schema",
+    "type": "object",
+    "properties": {
+        "scopes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+                "type": "string"
+            }
+        },
+        "payload": {
+            "type": "object",
+            "properties": {
+                "diff-task": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

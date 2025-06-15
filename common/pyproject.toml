@@ -1,17 +1,12 @@
 [project]
-name = "githubscript"
+name = "scriptworker_common"
 version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.12"
 dependencies = [
     "scriptworker",
-    "scriptworker_common",
-    "simple-github",
     "taskcluster",
 ]
-
-[tool.uv.sources]
-scriptworker_common = { workspace = true }
 
 [dependency-groups]
 dev = [

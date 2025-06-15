@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock, patch
 import uuid
-from githubscript import utils
+from scriptworker_common import is_task_coming_from_pr
 from scriptworker.client import Context
 
 
@@ -44,11 +44,11 @@ def test_is_task_coming_from_pr(task_group_id, expectation):
 
     GITHUB_MOCK.reset_mock()
 
-    with patch("githubscript.utils.Queue", queue_mock), patch(
-        "githubscript.utils.Github", GITHUB_MOCK
+    with patch("scriptworker_common.Queue", queue_mock), patch(
+        "scriptworker_common.Github", GITHUB_MOCK
     ):
         assert (
-            utils.is_task_coming_from_pr(context, task_id, owner, repo, 5)
+            is_task_coming_from_pr(context, task_id, owner, repo, 5)
             == expectation
         )
 

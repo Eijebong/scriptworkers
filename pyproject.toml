@@ -1,0 +1,2 @@
+[tool.uv.workspace]
+members = ["common", "githubscript", "apdiffscript"]

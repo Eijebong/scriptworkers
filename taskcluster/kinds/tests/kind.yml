@@ -15,15 +15,26 @@ task-defaults:
   worker:
     max-run-time: 1800
     docker-image: { in-tree: python-test }
+  run:
+    use-caches: [uv, checkout]
+    using: run-task
 
 tasks:
   githubscript:
     description: Runs python tests for githubscript
     run:
-      use-caches: [uv, checkout]
-      using: run-task
       command: |
         cd ${VCS_PATH}/githubscript && uv run pytest
+  apdiffscript:
+    description: Runs python tests for apdiffscript
+    run:
+      command: |
+        cd ${VCS_PATH}/apdiffscript && uv run pytest
+  scriptworker_common:
+    description: Runs python tests for scriptworker_common
+    run:
+      command: |
+        cd ${VCS_PATH}/common && uv run pytest
 
 
 

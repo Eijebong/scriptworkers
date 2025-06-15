@@ -1,7 +1,7 @@
 from scriptworker.exceptions import TaskVerificationError
 from taskcluster import Queue
 import logging
-from .utils import is_task_coming_from_pr
+from scriptworker_common import is_task_coming_from_pr
 import json
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,7 @@ async def create_apdiff_comment_on_pr(context, args):
 
 
 def apply_patch(context, args):
-    raise NotImplemented("Not implemented yet")
+    raise NotImplementedError("Not implemented yet")
 
 
 async def create_aptest_comment_on_pr(context, args):
