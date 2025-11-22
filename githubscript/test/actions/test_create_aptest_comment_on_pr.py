@@ -95,10 +95,14 @@ async def test_aptest():
     context.session = Mock()
     context.session.get.return_value = AsyncMock()
     context.session.get.return_value.__aenter__.return_value.raise_for_status = Mock()
-    context.session.get.return_value.__aenter__.return_value.read.return_value = json.dumps({
-        "apworld": "foo",
-        "version": "42.0.0",
-    }).encode()
+    context.session.get.return_value.__aenter__.return_value.read.return_value = (
+        json.dumps(
+            {
+                "apworld": "foo",
+                "version": "42.0.0",
+            }
+        ).encode()
+    )
 
     with patch("githubscript.actions.Queue", MOCK_QUEUE):
         await create_aptest_comment_on_pr(context, ["97"])

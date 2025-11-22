@@ -1,6 +1,7 @@
 from scriptworker.exceptions import TaskVerificationError
 from taskcluster import Queue
 import logging
+import os
 from .utils import is_task_coming_from_pr
 import json
 
@@ -117,8 +118,248 @@ async def create_aptest_comment_on_pr(context, args):
         await _create_github_comment(context, owner, repo, pr_number, comment)
 
 
+def _get_fuzz_target_info(context, args):
+    if len(args) != 2:
+        raise TaskVerificationError(
+            "Expected two arguments: type (pr/branch) and value"
+        )
+
+    target_type, target_value = args
+
+    if target_type not in ("pr", "branch"):
+        raise TaskVerificationError(f"Invalid target type '{target_type}'")
+
+    if target_type == "pr":
+        _, _, pr_number = _get_pr_info(context, [target_value])
+        return ("pr", pr_number)
+    else:
+        return ("branch", target_value)
+
+
+def _extract_checksum_from_apdiff(apdiff, version):
+    for version_range, diff in apdiff.get("diffs", {}).items():
+        if "..." not in version_range:
+            continue
+        _, to_version = version_range.split("...", 1)
+        if to_version != version:
+            continue
+        if "VersionAdded" not in diff:
+            continue
+        return diff["VersionAdded"]["checksum"]
+    return None
+
+
+async def upload_fuzz_results(context, args):
+    target_type, target_value = _get_fuzz_target_info(context, args)
+    payload = context.task["payload"]
+
+    for field in ("fuzz-task", "diff-task", "world-name", "world-version"):
+        if field not in payload:
+            raise TaskVerificationError(f"{field} is missing from the payload")
+
+    if target_type == "branch" and target_value != "main":
+        logger.info(
+            "Skipping upload for branch %s (only main publishes)" % target_value
+        )
+        return
+
+    api_key = os.environ.get("APDIFF_API_KEY")
+    if not api_key:
+        raise TaskVerificationError("APDIFF_API_KEY environment variable is not set")
+
+    logger.info("Uploading fuzz results for %s %s" % (target_type, target_value))
+
+    fuzz_task_id = payload["fuzz-task"]
+    diff_task_id = payload["diff-task"]
+    world_name = payload["world-name"]
+    world_version = payload["world-version"]
+    extra_args = payload.get("extra-args")
+
+    queue = Queue(
+        {
+            "rootUrl": context.config["taskcluster_root_url"],
+        }
+    )
+
+    logger.debug("Getting fuzz artifact from task %s" % fuzz_task_id)
+    fuzz_report_url = queue.getLatestArtifact(fuzz_task_id, "public/report.json")["url"]
+    async with context.session.get(fuzz_report_url) as r:
+        r.raise_for_status()
+        fuzz_report = json.loads((await r.read()).decode())
+    stats = fuzz_report["stats"]
+
+    logger.debug("Getting apdiff artifact from task %s" % diff_task_id)
+    apdiff_url = queue.getLatestArtifact(
+        diff_task_id, f"public/diffs/{world_name}.apdiff"
+    )["url"]
+    async with context.session.get(apdiff_url) as r:
+        r.raise_for_status()
+        apdiff = json.loads((await r.read()).decode())
+    checksum = _extract_checksum_from_apdiff(apdiff, world_version)
+
+    if not checksum:
+        raise TaskVerificationError(
+            f"Could not find checksum for version {world_version} in apdiff"
+        )
+
+    apdiff_viewer_url = os.environ.get(
+        "APDIFF_VIEWER_URL", "https://apdiff.bananium.fr"
+    )
+    pr_number = target_value if target_type == "pr" else None
+
+    request_body = {
+        "task_id": fuzz_task_id,
+        "pr_number": pr_number,
+        "results": [
+            {
+                "world_name": world_name,
+                "version": world_version,
+                "checksum": checksum,
+                "total": stats["total"],
+                "success": stats["success"],
+                "failure": stats["failure"],
+                "timeout": stats["timeout"],
+                "ignored": stats["ignored"],
+            }
+        ],
+    }
+
+    if extra_args:
+        request_body["extra_args"] = extra_args
+
+    logger.info("Posting fuzz results to API")
+    async with context.session.post(
+        f"{apdiff_viewer_url}/api/fuzz-results",
+        json=request_body,
+        headers={"X-Api-Key": api_key},
+    ) as r:
+        r.raise_for_status()
+
+
+def _format_diff(val):
+    return f"+{val}" if val > 0 else str(val)
+
+
+def _format_pct(count, total, ignored):
+    effective = total - ignored
+    if effective == 0:
+        return "N/A"
+    return f"{100 * count / effective:.1f}%"
+
+
+async def _build_fuzz_comment_section(
+    context, queue, fuzz_task, world_name, world_version, checksum, apdiff_viewer_url
+):
+    fuzz_task_id = fuzz_task["task-id"]
+    extra_args = fuzz_task.get("extra-args")
+
+    logger.debug("Getting fuzz artifact from task %s" % fuzz_task_id)
+    fuzz_report_url = queue.getLatestArtifact(fuzz_task_id, "public/report.json")["url"]
+    async with context.session.get(fuzz_report_url) as r:
+        r.raise_for_status()
+        fuzz_report = json.loads((await r.read()).decode())
+    current_stats = fuzz_report["stats"]
+
+    total = current_stats["total"]
+    ignored = current_stats["ignored"]
+    failure = current_stats["failure"] + current_stats["timeout"]
+    failure_pct = _format_pct(failure, total, ignored)
+
+    config_name = extra_args if extra_args else "default"
+    section = f"\n### {config_name}\n"
+    section += (
+        f"Current: {current_stats['success']} success, "
+        f"{current_stats['failure']} failure, "
+        f"{current_stats['timeout']} timeout, "
+        f"{ignored} ignored "
+        f"(total: {total}, failure rate: {failure_pct})\n"
+    )
+
+    url = f"{apdiff_viewer_url}/api/fuzz-results/{world_name}/previous"
+    params = {"version": world_version, "checksum": checksum}
+    if extra_args:
+        params["extra_args"] = extra_args
+
+    async with context.session.get(url, params=params) as r:
+        r.raise_for_status()
+        previous_results = json.loads((await r.read()).decode())
+
+    if previous_results:
+        section += "Comparison with baselines:"
+        for baseline in previous_results:
+            success_diff = current_stats["success"] - baseline["success"]
+            failure_diff = current_stats["failure"] - baseline["failure"]
+            timeout_diff = current_stats["timeout"] - baseline["timeout"]
+
+            section += (
+                f"\n- {baseline['match_type']}: {_format_diff(success_diff)} success, "
+                f"{_format_diff(failure_diff)} failure, "
+                f"{_format_diff(timeout_diff)} timeout"
+            )
+        section += "\n"
+    else:
+        section += "No previous results found for comparison.\n"
+
+    return section
+
+
+async def create_apfuzz_comment_on_pr(context, args):
+    owner, repo, pr_number = _get_pr_info(context, args)
+
+    logger.info("Creating apfuzz comment for PR %s" % pr_number)
+    payload = context.task["payload"]
+
+    for field in ("fuzz-tasks", "diff-task", "world-name", "world-version"):
+        if field not in payload:
+            raise TaskVerificationError(f"{field} is missing from the payload")
+
+    fuzz_tasks = payload["fuzz-tasks"]
+    diff_task_id = payload["diff-task"]
+    world_name = payload["world-name"]
+    world_version = payload["world-version"]
+
+    queue = Queue(
+        {
+            "rootUrl": context.config["taskcluster_root_url"],
+        }
+    )
+
+    apdiff_url = queue.getLatestArtifact(
+        diff_task_id, f"public/diffs/{world_name}.apdiff"
+    )["url"]
+    async with context.session.get(apdiff_url) as r:
+        r.raise_for_status()
+        apdiff = json.loads((await r.read()).decode())
+    checksum = _extract_checksum_from_apdiff(apdiff, world_version)
+
+    if not checksum:
+        raise TaskVerificationError(
+            f"Could not find checksum for version {world_version} in apdiff"
+        )
+
+    apdiff_viewer_url = os.environ.get(
+        "APDIFF_VIEWER_URL", "https://apdiff.bananium.fr"
+    )
+
+    comment = f"**Fuzz results for {world_name} v{world_version}**\n"
+    for fuzz_task in fuzz_tasks:
+        comment += await _build_fuzz_comment_section(
+            context,
+            queue,
+            fuzz_task,
+            world_name,
+            world_version,
+            checksum,
+            apdiff_viewer_url,
+        )
+
+    await _create_github_comment(context, owner, repo, pr_number, comment)
+
+
 ACTIONS = {
     "create-apdiff-comment-on-pr": create_apdiff_comment_on_pr,
     "create-aptest-comment-on-pr": create_aptest_comment_on_pr,
     "apply-patch": apply_patch,
+    "upload-fuzz-results": upload_fuzz_results,
+    "create-apfuzz-comment-on-pr": create_apfuzz_comment_on_pr,
 }

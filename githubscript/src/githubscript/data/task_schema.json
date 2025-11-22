@@ -18,6 +18,34 @@
                 },
                 "test-task": {
                     "type": "string"
+                },
+                "fuzz-task": {
+                    "type": "string"
+                },
+                "fuzz-tasks": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "task-id": {
+                                "type": "string"
+                            },
+                            "extra-args": {
+                                "type": "string"
+                            }
+                        },
+                        "required": ["task-id"],
+                        "additionalProperties": false
+                    }
+                },
+                "extra-args": {
+                    "type": "string"
+                },
+                "world-name": {
+                    "type": "string"
+                },
+                "world-version": {
+                    "type": "string"
                 }
             },
             "additionalProperties": false
