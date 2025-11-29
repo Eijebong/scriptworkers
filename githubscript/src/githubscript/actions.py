@@ -266,14 +266,13 @@ async def _build_fuzz_comment_section(
     failure_pct = _format_pct(failure, total, ignored)
 
     config_name = extra_args if extra_args else "default"
-    section = f"\n### {config_name}\n"
-    section += (
-        f"Current: {current_stats['success']} success, "
-        f"{current_stats['failure']} failure, "
-        f"{current_stats['timeout']} timeout, "
-        f"{ignored} ignored "
-        f"(total: {total}, failure rate: {failure_pct})\n"
-    )
+    section = f"\n#### {config_name}\n\n"
+    section += f"**Success**: {current_stats['success']}\n"
+    section += f"**Failure**: {current_stats['failure']}\n"
+    section += f"**Timeout**: {current_stats['timeout']}\n"
+    section += f"**Ignored**: {ignored}\n"
+    section += f"**Total**: {total}\n"
+    section += f"**Failure rate**: {failure_pct}\n"
 
     url = f"{apdiff_viewer_url}/api/fuzz-results/{world_name}/previous"
     params = {"version": world_version, "checksum": checksum}
@@ -286,20 +285,18 @@ async def _build_fuzz_comment_section(
         previous_results = response.get("previous_results", [])
 
     if previous_results:
-        section += "Comparison with baselines:"
+        section += "\n**Comparison with baselines:**\n"
         for baseline in previous_results:
             success_diff = current_stats["success"] - baseline["success"]
             failure_diff = current_stats["failure"] - baseline["failure"]
             timeout_diff = current_stats["timeout"] - baseline["timeout"]
 
-            section += (
-                f"\n- {baseline['match_type']}: {_format_diff(success_diff)} success, "
-                f"{_format_diff(failure_diff)} failure, "
-                f"{_format_diff(timeout_diff)} timeout"
-            )
-        section += "\n"
+            section += f"\n*{baseline['match_type']}:*\n"
+            section += f"- Success: {_format_diff(success_diff)}\n"
+            section += f"- Failure: {_format_diff(failure_diff)}\n"
+            section += f"- Timeout: {_format_diff(timeout_diff)}\n"
     else:
-        section += "No previous results found for comparison.\n"
+        section += "\nNo previous results found for comparison.\n"
 
     return section
 

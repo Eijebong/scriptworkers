@@ -139,13 +139,13 @@ async def test_comment_with_baselines(
     body = call_args[1]["data"]["body"]
     assert "test_apworld" in body
     assert "v1.0.0" in body
-    assert "### default" in body
-    assert "3480 success" in body
-    assert "1505 ignored" in body
+    assert "#### default" in body
+    assert "**Success**: 3480" in body
+    assert "**Ignored**: 1505" in body
     assert "0.4%" in body
     assert "main" in body
     assert "same_version" in body
-    assert "+80 success" in body
+    assert "Success: +80" in body
 
 
 @pytest.mark.asyncio
@@ -220,7 +220,7 @@ async def test_comment_with_multiple_configs(
     call_args = fuzz_comment_context.github.post.call_args
     body = call_args[1]["data"]["body"]
 
-    assert "### default" in body
-    assert "### no-restrictive-starts" in body
-    assert "3480 success" in body
-    assert "3200 success" in body
+    assert "#### default" in body
+    assert "#### no-restrictive-starts" in body
+    assert "**Success**: 3480" in body
+    assert "**Success**: 3200" in body
