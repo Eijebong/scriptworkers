@@ -1,0 +1,20 @@
+loader: taskgraph.loader.transform:loader
+
+transforms:
+  - taskgraph.transforms.run
+  - taskgraph.transforms.task
+  - eije_taskgraph.transforms.common:transforms
+
+kind-dependencies:
+  - publish
+
+tasks:
+  argocd:
+    description: ArgoCD webhook
+    worker-type: argocd-webhook
+    attributes:
+      very-soft-if-deps:
+        - publish-argocd-webhook
+        - publish-githubscript
+    run:
+      using: argocd-webhook
