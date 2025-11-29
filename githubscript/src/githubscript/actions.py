@@ -282,7 +282,8 @@ async def _build_fuzz_comment_section(
 
     async with context.session.get(url, params=params) as r:
         r.raise_for_status()
-        previous_results = json.loads((await r.read()).decode())
+        response = json.loads((await r.read()).decode())
+        previous_results = response.get("previous_results", [])
 
     if previous_results:
         section += "Comparison with baselines:"

@@ -18,22 +18,24 @@ MOCK_FUZZ_REPORT_WITH_FAILURES = {
     "errors": {},
 }
 
-MOCK_PREVIOUS_RESULTS = [
-    {
-        "match_type": "main",
-        "success": 3400,
-        "failure": 15,
-        "timeout": 10,
-        "total": 5000,
-    },
-    {
-        "match_type": "same_version",
-        "success": 3450,
-        "failure": 12,
-        "timeout": 8,
-        "total": 5000,
-    },
-]
+MOCK_PREVIOUS_RESULTS = {
+    "previous_results": [
+        {
+            "match_type": "main",
+            "success": 3400,
+            "failure": 15,
+            "timeout": 10,
+            "total": 5000,
+        },
+        {
+            "match_type": "same_version",
+            "success": 3450,
+            "failure": 12,
+            "timeout": 8,
+            "total": 5000,
+        },
+    ]
+}
 
 
 @pytest.mark.parametrize(
@@ -158,7 +160,7 @@ async def test_comment_without_baselines(
         side_effect=[
             mock_response(mock_apdiff),
             mock_response(MOCK_FUZZ_REPORT_WITH_FAILURES),
-            mock_response([]),
+            mock_response({"previous_results": []}),
         ]
     )
 
@@ -204,7 +206,7 @@ async def test_comment_with_multiple_configs(
             mock_response(MOCK_FUZZ_REPORT_WITH_FAILURES),
             mock_response(MOCK_PREVIOUS_RESULTS),
             mock_response(mock_fuzz_report_extra),
-            mock_response([]),
+            mock_response({"previous_results": []}),
         ]
     )
 
