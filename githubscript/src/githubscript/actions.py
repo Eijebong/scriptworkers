@@ -266,12 +266,14 @@ async def _build_fuzz_comment_section(
     failure_pct = _format_pct(failure, total, ignored)
 
     config_name = extra_args if extra_args else "default"
-    section = f"\n#### {config_name}\n\n"
-    section += f"**Success**: {current_stats['success']}\n"
-    section += f"**Failure**: {current_stats['failure']}\n"
-    section += f"**Timeout**: {current_stats['timeout']}\n"
-    section += f"**Ignored**: {ignored}\n"
-    section += f"**Total**: {total}\n"
+    section = f"\n### {config_name}\n\n"
+    section += "```\n"
+    section += f"Success: {current_stats['success']}\n"
+    section += f"Failure: {current_stats['failure']}\n"
+    section += f"Timeout: {current_stats['timeout']}\n"
+    section += f"Ignored: {ignored}\n"
+    section += f"Total: {total}\n"
+    section += "```\n"
     section += f"**Failure rate**: {failure_pct}\n"
 
     url = f"{apdiff_viewer_url}/api/fuzz-results/{world_name}/previous"
@@ -339,7 +341,7 @@ async def create_apfuzz_comment_on_pr(context, args):
         "APDIFF_VIEWER_URL", "https://apdiff.bananium.fr"
     )
 
-    comment = f"**Fuzz results for {world_name} v{world_version}**\n"
+    comment = f"## Fuzz results for {world_name} v{world_version}\n"
     for fuzz_task in fuzz_tasks:
         comment += await _build_fuzz_comment_section(
             context,

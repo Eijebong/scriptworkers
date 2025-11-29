@@ -139,9 +139,9 @@ async def test_comment_with_baselines(
     body = call_args[1]["data"]["body"]
     assert "test_apworld" in body
     assert "v1.0.0" in body
-    assert "#### default" in body
-    assert "**Success**: 3480" in body
-    assert "**Ignored**: 1505" in body
+    assert "### default" in body
+    assert "Success: 3480" in body
+    assert "Ignored: 1505" in body
     assert "0.4%" in body
     assert "main" in body
     assert "same_version" in body
@@ -220,7 +220,7 @@ async def test_comment_with_multiple_configs(
     call_args = fuzz_comment_context.github.post.call_args
     body = call_args[1]["data"]["body"]
 
-    assert "#### default" in body
-    assert "#### no-restrictive-starts" in body
-    assert "**Success**: 3480" in body
-    assert "**Success**: 3200" in body
+    assert "### default" in body
+    assert "### no-restrictive-starts" in body
+    assert "Success: 3480" in body
+    assert "Success: 3200" in body
