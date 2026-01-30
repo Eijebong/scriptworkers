@@ -354,6 +354,7 @@ async def create_apfuzz_comment_on_pr(context, args):
     )
 
     comment = f"## Fuzz results for {world_name} v{world_version}\n"
+    fuzz_tasks = sorted(fuzz_tasks, key=lambda t: t.get("extra-args", ""))
     for fuzz_task in fuzz_tasks:
         comment += await _build_fuzz_comment_section(
             context,
