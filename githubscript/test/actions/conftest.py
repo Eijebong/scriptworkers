@@ -23,6 +23,15 @@ def mock_queue():
     mock.return_value.getLatestArtifact.side_effect = lambda task_id, artifact: {
         "url": f"https://nowhere/{task_id}/{artifact}"
     }
+    mock.return_value.status.side_effect = lambda task_id: {
+        "status": {"runs": [{"runId": 0}]}
+    }
+    mock.return_value.listArtifacts.side_effect = lambda task_id, run_id: {
+        "artifacts": [
+            {"name": "public/report.json"},
+            {"name": f"public/fuzz_output_{task_id}.zip"},
+        ]
+    }
     return mock
 
 

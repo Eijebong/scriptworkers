@@ -140,6 +140,7 @@ async def test_comment_with_baselines(
     assert "test_apworld" in body
     assert "v1.0.0" in body
     assert "### default" in body
+    assert "([results](http://nowhere/tasks/fuzz-task-id/runs/0/public/fuzz_output_fuzz-task-id.zip))" in body
     assert "Success: 3480" in body
     assert "Ignored: 1505" in body
     assert "0.4%" in body

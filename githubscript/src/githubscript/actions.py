@@ -266,7 +266,19 @@ async def _build_fuzz_comment_section(
     failure_pct = _format_pct(failure, total, ignored)
 
     config_name = extra_args if extra_args else "default"
-    section = f"\n### {config_name}\n\n"
+
+    results_link = ""
+    runs = queue.status(fuzz_task_id)["status"]["runs"]
+    run_id = runs[-1]["runId"]
+    artifacts = queue.listArtifacts(fuzz_task_id, run_id).get("artifacts", [])
+    for artifact in artifacts:
+        if artifact["name"].startswith("public/fuzz_output"):
+            tc_root = context.config["taskcluster_root_url"]
+            results_url = f"{tc_root}/tasks/{fuzz_task_id}/runs/{run_id}/{artifact['name']}"
+            results_link = f" ([results]({results_url}))"
+            break
+
+    section = f"\n### {config_name}{results_link}\n\n"
     section += "```\n"
     section += f"Success: {current_stats['success']}\n"
     section += f"Failure: {current_stats['failure']}\n"
