@@ -75,7 +75,6 @@ async def _ensure_repo(owner, repo, token):
     """Clone or fetch the repo using HTTPS + installation token."""
     repo_dir = os.path.join(CACHE_DIR, owner, repo)
     clone_url = f"https://x-access-token:{token}@github.com/{owner}/{repo}.git"
-    safe_url = f"https://github.com/{owner}/{repo}.git"
 
     if os.path.isdir(os.path.join(repo_dir, ".git")):
         logger.info("Fetching %s/%s", owner, repo)
@@ -89,7 +88,6 @@ async def _ensure_repo(owner, repo, token):
             cwd=CACHE_DIR,
         )
 
-    await _run_git(["remote", "set-url", "origin", safe_url], cwd=repo_dir)
     return repo_dir
 
 
@@ -196,5 +194,7 @@ async def publish(context):
         await _run_git(["push", "origin", "main"], cwd=repo_dir)
         logger.info("Publish complete")
     finally:
+        safe_url = f"https://github.com/{owner}/{repo}.git"
+        await _run_git(["remote", "set-url", "origin", safe_url], cwd=repo_dir)
         for f in patch_files:
             os.unlink(f)
