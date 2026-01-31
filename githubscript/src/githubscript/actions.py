@@ -1,7 +1,6 @@
 from scriptworker.exceptions import TaskVerificationError
 from taskcluster import Queue
 import logging
-import os
 from .utils import is_task_coming_from_pr
 import json
 
@@ -163,9 +162,8 @@ async def upload_fuzz_results(context, args):
         )
         return
 
-    api_key = os.environ.get("APDIFF_API_KEY")
-    if not api_key:
-        raise TaskVerificationError("APDIFF_API_KEY environment variable is not set")
+    apdiff_config = context.config["apdiff"]
+    api_key = apdiff_config["api_key"]
 
     logger.info("Uploading fuzz results for %s %s" % (target_type, target_value))
 
@@ -202,8 +200,8 @@ async def upload_fuzz_results(context, args):
             f"Could not find checksum for version {world_version} in apdiff"
         )
 
-    apdiff_viewer_url = os.environ.get(
-        "APDIFF_VIEWER_URL", "https://apdiff.bananium.fr"
+    apdiff_viewer_url = context.config.get("apdiff", {}).get(
+        "viewer_url", "https://apdiff.bananium.fr"
     )
     pr_number = target_value if target_type == "pr" else None
 
@@ -371,8 +369,8 @@ async def create_apfuzz_comment_on_pr(context, args):
             f"Could not find checksum for version {world_version} in apdiff"
         )
 
-    apdiff_viewer_url = os.environ.get(
-        "APDIFF_VIEWER_URL", "https://apdiff.bananium.fr"
+    apdiff_viewer_url = context.config.get("apdiff", {}).get(
+        "viewer_url", "https://apdiff.bananium.fr"
     )
 
     comment = f"## Fuzz results for {world_name} v{world_version}\n"

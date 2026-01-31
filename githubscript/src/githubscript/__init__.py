@@ -1,5 +1,4 @@
 import base64
-import os
 from scriptworker.exceptions import TaskVerificationError
 from .scopes import extract_actions_from_scopes, extract_target_repo_from_scopes
 from simple_github import AppClient
@@ -19,9 +18,11 @@ def _check_requirements(actions, config):
             f"cannot run actions: {', '.join(a for a, *_ in actions if ACTIONS[a]['requires'] == 'github')}"
         )
 
-    if "apdiff" in requirements and not os.environ.get("APDIFF_API_KEY"):
+    apdiff_config = config.get("apdiff", {})
+    has_apdiff = apdiff_config.get("api_key") and apdiff_config.get("viewer_url")
+    if "apdiff" in requirements and not has_apdiff:
         raise TaskVerificationError(
-            "This worker is not configured with APDIFF_API_KEY, "
+            "This worker is not configured with apdiff credentials, "
             f"cannot run actions: {', '.join(a for a, *_ in actions if ACTIONS[a]['requires'] == 'apdiff')}"
         )
 

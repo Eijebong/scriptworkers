@@ -22,7 +22,6 @@ from unittest.mock import Mock, patch
         pytest.param(["branch", "feature-branch"], does_not_raise()),
     ),
 )
-@patch.dict("os.environ", {"APDIFF_API_KEY": "test-api-key"})
 @pytest.mark.asyncio
 async def test_args(
     fuzz_context,
@@ -61,7 +60,6 @@ async def test_missing_payload_fields(
                 await upload_fuzz_results(fuzz_context, ["pr", "97"])
 
 
-@patch.dict("os.environ", {"APDIFF_API_KEY": "test-api-key"})
 @pytest.mark.asyncio
 async def test_missing_checksum(
     fuzz_context,
@@ -95,6 +93,7 @@ async def test_missing_api_key(
     mock_fuzz_report,
     mock_apdiff,
 ):
+    fuzz_context.config.pop("apdiff", None)
     fuzz_context.session.get = Mock(
         side_effect=[mock_response(mock_fuzz_report), mock_response(mock_apdiff)]
     )
@@ -103,17 +102,12 @@ async def test_missing_api_key(
         with patch(
             "githubscript.actions.is_task_coming_from_pr", mock_is_task_coming_from_pr
         ):
-            with patch.dict("os.environ", {}, clear=True):
-                with pytest.raises(TaskVerificationError, match="APDIFF_API_KEY"):
-                    await upload_fuzz_results(fuzz_context, ["pr", "97"])
+            with pytest.raises(KeyError):
+                await upload_fuzz_results(fuzz_context, ["pr", "97"])
 
 
-@patch.dict(
-    "os.environ",
-    {"APDIFF_API_KEY": "test-api-key", "APDIFF_VIEWER_URL": "https://test.example.com"},
-)
 @pytest.mark.asyncio
-async def test_upload_for_pr(
+async def test_upload_for_pr_custom_viewer_url(
     fuzz_context,
     mock_queue,
     mock_is_task_coming_from_pr,
@@ -121,6 +115,7 @@ async def test_upload_for_pr(
     mock_fuzz_report,
     mock_apdiff,
 ):
+    fuzz_context.config["apdiff"]["viewer_url"] = "https://test.example.com"
     fuzz_context.session.get = Mock(
         side_effect=[mock_response(mock_fuzz_report), mock_response(mock_apdiff)]
     )
@@ -154,7 +149,6 @@ async def test_upload_for_pr(
     )
 
 
-@patch.dict("os.environ", {"APDIFF_API_KEY": "test-api-key"})
 @pytest.mark.asyncio
 async def test_upload_for_main_branch(
     fuzz_context,
@@ -179,7 +173,6 @@ async def test_upload_for_main_branch(
     assert fuzz_context.session.post.call_args[1]["json"]["pr_number"] is None
 
 
-@patch.dict("os.environ", {"APDIFF_API_KEY": "test-api-key"})
 @pytest.mark.asyncio
 async def test_skip_upload_for_non_main_branch(
     fuzz_context, mock_queue, mock_response, mock_fuzz_report, mock_apdiff
@@ -195,7 +188,6 @@ async def test_skip_upload_for_non_main_branch(
     fuzz_context.session.post.assert_not_called()
 
 
-@patch.dict("os.environ", {"APDIFF_API_KEY": "test-api-key"})
 @pytest.mark.asyncio
 async def test_upload_with_extra_args(
     fuzz_context,
