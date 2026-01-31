@@ -34,11 +34,13 @@ task_log_dir: "/tmp/artifact/public/logs"
 """
 
 script_name = os.environ["WORKER_TYPE"]
+trust_level = os.environ.get("TRUST_LEVEL")
+worker_type = f"{script_name}-{trust_level}" if trust_level else script_name
 
 with open("scriptworker.yaml", "w") as fd:
     fd.write(
         CONFIG.format(
-            worker_type=script_name,
+            worker_type=worker_type,
             worker_id=script_name,
             task_script=script_name,
         )
