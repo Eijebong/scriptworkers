@@ -200,9 +200,7 @@ async def upload_fuzz_results(context, args):
             f"Could not find checksum for version {world_version} in apdiff"
         )
 
-    apdiff_viewer_url = context.config.get("apdiff", {}).get(
-        "viewer_url", "https://apdiff.bananium.fr"
-    )
+    apdiff_viewer_url = context.config["apdiff"]["viewer_url"]
     pr_number = target_value if target_type == "pr" else None
 
     request_body = {
@@ -369,9 +367,7 @@ async def create_apfuzz_comment_on_pr(context, args):
             f"Could not find checksum for version {world_version} in apdiff"
         )
 
-    apdiff_viewer_url = context.config.get("apdiff", {}).get(
-        "viewer_url", "https://apdiff.bananium.fr"
-    )
+    apdiff_viewer_url = context.config["apdiff"]["viewer_url"]
 
     comment = f"## Fuzz results for {world_name} v{world_version}\n"
     fuzz_tasks = sorted(

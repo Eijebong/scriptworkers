@@ -1,5 +1,6 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from contextlib import contextmanager, ExitStack
+from unittest.mock import AsyncMock, MagicMock, patch, call
 from publishscript.publish import publish
 from scriptworker.exceptions import TaskVerificationError
 
@@ -38,6 +39,12 @@ def context():
     return ctx
 
 
+@contextmanager
+def _enter_patches(cms):
+    with ExitStack() as stack:
+        yield [stack.enter_context(cm) for cm in cms]
+
+
 def _common_patches():
     return [
         patch(MOCK_PR_CHECK, return_value=True),
@@ -59,7 +66,7 @@ async def test_publish_rejects_unrelated_task(context):
 
 @pytest.mark.asyncio
 async def test_publish_merges_pr(context):
-    with contextmanager_stack(_common_patches()):
+    with _enter_patches(_common_patches()):
         await publish(context)
 
         context.github.put.assert_called_once_with(
@@ -69,15 +76,33 @@ async def test_publish_merges_pr(context):
 
 
 @pytest.mark.asyncio
-async def test_publish_applies_lock_diff(context):
+async def test_publish_does_dry_run_before_merge(context):
     patches = _common_patches()
-    with contextmanager_stack(patches) as mocks:
+    with _enter_patches(patches) as mocks:
         mock_git = mocks[2]
-        mock_patch = mocks[4]
+        mock_run_patch = mocks[4]
 
         await publish(context)
 
-        mock_patch.assert_called_once_with("/tmp/fake.diff", "/tmp/fake-repo")
+        # Dry run patch should happen before the merge API call
+        mock_run_patch.assert_any_call("/tmp/fake.diff", "/tmp/fake-repo", dry_run=True)
+
+        # Verify squash merge simulation happened
+        mock_git.assert_any_call(["fetch", "origin", "pull/42/head:pr-head"], cwd="/tmp/fake-repo")
+        mock_git.assert_any_call(["merge", "--squash", "pr-head"], cwd="/tmp/fake-repo")
+
+
+@pytest.mark.asyncio
+async def test_publish_applies_lock_diff(context):
+    patches = _common_patches()
+    with _enter_patches(patches) as mocks:
+        mock_git = mocks[2]
+        mock_run_patch = mocks[4]
+
+        await publish(context)
+
+        # Real apply (without dry_run)
+        mock_run_patch.assert_any_call("/tmp/fake.diff", "/tmp/fake-repo")
         mock_git.assert_any_call(["add", "index.lock"], cwd="/tmp/fake-repo")
 
 
@@ -86,13 +111,14 @@ async def test_publish_with_expectations(context):
     context.task["payload"]["expectations-task"] = "expectations-task-id"
 
     patches = _common_patches()
-    with contextmanager_stack(patches) as mocks:
+    with _enter_patches(patches) as mocks:
         mock_git = mocks[2]
-        mock_patch = mocks[4]
+        mock_run_patch = mocks[4]
 
         await publish(context)
 
-        assert mock_patch.call_count == 2
+        # 2 dry runs + 2 real applies = 4
+        assert mock_run_patch.call_count == 4
         mock_git.assert_any_call(["add", "meta"], cwd="/tmp/fake-repo")
         mock_git.assert_any_call(["add", "index.lock"], cwd="/tmp/fake-repo")
 
@@ -100,7 +126,7 @@ async def test_publish_with_expectations(context):
 @pytest.mark.asyncio
 async def test_publish_pushes_to_main(context):
     patches = _common_patches()
-    with contextmanager_stack(patches) as mocks:
+    with _enter_patches(patches) as mocks:
         mock_git = mocks[2]
 
         await publish(context)
@@ -111,26 +137,27 @@ async def test_publish_pushes_to_main(context):
 @pytest.mark.asyncio
 async def test_publish_skips_empty_lock_diff(context):
     patches = _common_patches()
-    with contextmanager_stack(patches) as mocks:
+    with _enter_patches(patches) as mocks:
         mock_getsize = mocks[5]
-        mock_patch = mocks[4]
+        mock_run_patch = mocks[4]
         mock_git = mocks[2]
         mock_getsize.return_value = 0
 
         await publish(context)
 
-        mock_patch.assert_not_called()
+        mock_run_patch.assert_not_called()
         mock_git.assert_any_call(["push", "origin", "main"], cwd="/tmp/fake-repo")
 
 
-from contextlib import contextmanager
+@pytest.mark.asyncio
+async def test_dry_run_failure_prevents_merge(context):
+    patches = _common_patches()
+    with _enter_patches(patches) as mocks:
+        mock_run_patch = mocks[4]
+        mock_run_patch.side_effect = RuntimeError("patch dry-run failed")
 
+        with pytest.raises(RuntimeError, match="patch dry-run failed"):
+            await publish(context)
 
-@contextmanager
-def contextmanager_stack(cms):
-    if not cms:
-        yield []
-        return
-    with cms[0] as val:
-        with contextmanager_stack(cms[1:]) as rest:
-            yield [val] + rest
+        # Merge should never have been called
+        context.github.put.assert_not_called()

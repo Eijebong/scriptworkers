@@ -129,6 +129,10 @@ def fuzz_comment_context():
             "owner": "foo",
             "repo": "bar",
         },
+        "apdiff": {
+            "api_key": "test-api-key",
+            "viewer_url": "https://apdiff.bananium.fr",
+        },
     }
     context.session = Mock()
     context.github = AsyncMock()
