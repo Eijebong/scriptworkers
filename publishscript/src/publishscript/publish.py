@@ -140,12 +140,19 @@ async def publish(context):
     patch_files.append(lock_patch)
 
     try:
+        git_env = {
+            "GIT_AUTHOR_NAME": "Taskcluster",
+            "GIT_AUTHOR_EMAIL": "eijebong+taskcluster@bananium.fr",
+            "GIT_COMMITTER_NAME": "Taskcluster",
+            "GIT_COMMITTER_EMAIL": "eijebong+taskcluster@bananium.fr",
+        }
+
         # Dry run: simulate squash merge + patches locally before touching anything
         logger.info("Starting dry run: simulating merge + patches")
         await _run_git(["fetch", "origin", f"pull/{pr_number}/head:pr-head"], cwd=repo_dir)
         await _run_git(["checkout", "main"], cwd=repo_dir)
         await _run_git(["reset", "--hard", "origin/main"], cwd=repo_dir)
-        await _run_git(["merge", "--squash", "pr-head"], cwd=repo_dir)
+        await _run_git(["merge", "--squash", "pr-head"], cwd=repo_dir, env=git_env)
 
         if expectations_patch and os.path.getsize(expectations_patch) > 0:
             await _run_patch(expectations_patch, repo_dir, dry_run=True)
@@ -164,13 +171,6 @@ async def publish(context):
         # Fetch the merged main
         await _run_git(["fetch", "origin"], cwd=repo_dir)
         await _run_git(["reset", "--hard", "origin/main"], cwd=repo_dir)
-
-        git_env = {
-            "GIT_AUTHOR_NAME": "Taskcluster",
-            "GIT_AUTHOR_EMAIL": "eijebong+taskcluster@bananium.fr",
-            "GIT_COMMITTER_NAME": "Taskcluster",
-            "GIT_COMMITTER_EMAIL": "eijebong+taskcluster@bananium.fr",
-        }
 
         if expectations_patch and os.path.getsize(expectations_patch) > 0:
             logger.info("Applying expectations patch")
