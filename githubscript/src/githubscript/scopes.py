@@ -36,7 +36,7 @@ def extract_actions_from_scopes(scopes):
     actions = _extract_scopes("action", scopes, only_one=False)
 
     for (action, *_) in actions:
-        if action not in ACTIONS.keys():
+        if action not in ACTIONS:
             raise TaskVerificationError(f"The action {action} is not valid")
 
     return actions

@@ -395,9 +395,9 @@ async def create_apfuzz_comment_on_pr(context, args):
 
 
 ACTIONS = {
-    "create-apdiff-comment-on-pr": create_apdiff_comment_on_pr,
-    "create-aptest-comment-on-pr": create_aptest_comment_on_pr,
-    "apply-patch": apply_patch,
-    "upload-fuzz-results": upload_fuzz_results,
-    "create-apfuzz-comment-on-pr": create_apfuzz_comment_on_pr,
+    "create-apdiff-comment-on-pr": {"handler": create_apdiff_comment_on_pr, "requires": "github"},
+    "create-aptest-comment-on-pr": {"handler": create_aptest_comment_on_pr, "requires": "github"},
+    "apply-patch": {"handler": apply_patch, "requires": "github"},
+    "upload-fuzz-results": {"handler": upload_fuzz_results, "requires": "apdiff"},
+    "create-apfuzz-comment-on-pr": {"handler": create_apfuzz_comment_on_pr, "requires": "github"},
 }

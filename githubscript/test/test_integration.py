@@ -44,7 +44,7 @@ async def call_main(repo, actions):
             does_not_raise(),
             lambda context, mocks: mocks[
                 "create-apdiff-comment-on-pr"
-            ].assert_called_with(context, ["97"]),
+            ]["handler"].assert_called_with(context, ["97"]),
         ),
         pytest.param(
             "archipelago-index",
@@ -52,13 +52,13 @@ async def call_main(repo, actions):
             does_not_raise(),
             lambda context, mocks: mocks[
                 "create-apdiff-comment-on-pr"
-            ].assert_called_with(context, ["97", "98"]),
+            ]["handler"].assert_called_with(context, ["97", "98"]),
         ),
         pytest.param(
             "archipelago-index",
             "apply-patch:main",
             does_not_raise(),
-            lambda context, mocks: mocks["apply-patch"].assert_called_with(
+            lambda context, mocks: mocks["apply-patch"]["handler"].assert_called_with(
                 context, ["main"]
             ),
         ),
@@ -66,7 +66,7 @@ async def call_main(repo, actions):
             "archipelago-index",
             "apply-patch",
             does_not_raise(),
-            lambda context, mocks: mocks["apply-patch"].assert_called_with(context, []),
+            lambda context, mocks: mocks["apply-patch"]["handler"].assert_called_with(context, []),
         ),
         pytest.param(
             "archipelago-index",
@@ -78,8 +78,8 @@ async def call_main(repo, actions):
 )
 async def test_one_action(repo, action, expectation, verification):
     mocked_actions = {
-        "create-apdiff-comment-on-pr": AsyncMock(),
-        "apply-patch": AsyncMock(),
+        "create-apdiff-comment-on-pr": {"handler": AsyncMock(), "requires": "github"},
+        "apply-patch": {"handler": AsyncMock(), "requires": "github"},
     }
 
     with patch.dict("githubscript.actions.ACTIONS", mocked_actions), expectation as exc:
