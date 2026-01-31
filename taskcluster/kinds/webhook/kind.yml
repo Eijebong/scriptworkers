@@ -16,5 +16,6 @@ tasks:
       very-soft-if-deps:
         - publish-argocd-webhook
         - publish-githubscript
+        - publish-publishscript
     run:
       using: argocd-webhook
