@@ -6,7 +6,7 @@ requires-python = ">=3.12"
 dependencies = [
     "scriptworker",
     "simple-github",
-    "taskcluster",
+    "taskcluster>=96",
 ]
 
 [dependency-groups]
