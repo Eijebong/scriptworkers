@@ -54,13 +54,7 @@ async def _run_patch(patch_path, cwd, dry_run=False):
 
 
 async def _get_installation_token(github):
-    response = await github.post(
-        f"/app/installations/{github._installation_id}/access_tokens",
-        data={},
-    )
-    response.raise_for_status()
-    data = response.json()
-    return data["token"]
+    return await github.auth.get_token()
 
 
 async def _merge_pr(github, owner, repo, pr_number, head_rev):
