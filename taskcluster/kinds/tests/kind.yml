@@ -24,6 +24,13 @@ tasks:
       using: run-task
       command: |
         cd ${VCS_PATH}/githubscript && uv run pytest
+  publishscript:
+    description: Runs python tests for publishscript
+    run:
+      use-caches: [uv, checkout]
+      using: run-task
+      command: |
+        cd ${VCS_PATH}/publishscript && uv run pytest
 
 
 

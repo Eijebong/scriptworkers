@@ -1,0 +1,25 @@
+{
+    "title": "Publishscript task schema",
+    "type": "object",
+    "properties": {
+        "scopes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+                "type": "string"
+            }
+        },
+        "payload": {
+            "type": "object",
+            "properties": {
+                "pr-number": { "type": "integer" },
+                "head-rev": { "type": "string" },
+                "diff-task": { "type": "string" },
+                "expectations-task": { "type": "string" }
+            },
+            "required": ["pr-number", "head-rev", "diff-task"],
+            "additionalProperties": false
+        }
+    }
+}

@@ -24,4 +24,9 @@ tasks:
       tests: tests-githubscript
     repo: ghcr.io/eijebong/scriptworkers/githubscript
     secret: github_deploy
+  publishscript:
+    dependencies:
+      tests: tests-publishscript
+    repo: ghcr.io/eijebong/scriptworkers/publishscript
+    secret: github_deploy
 
