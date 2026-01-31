@@ -1,6 +1,6 @@
 import pytest
 from contextlib import contextmanager, ExitStack
-from unittest.mock import AsyncMock, MagicMock, patch, call
+from unittest.mock import AsyncMock, MagicMock, patch, call, ANY
 from publishscript.publish import publish
 from scriptworker.exceptions import TaskVerificationError
 
@@ -89,7 +89,7 @@ async def test_publish_does_dry_run_before_merge(context):
 
         # Verify squash merge simulation happened
         mock_git.assert_any_call(["fetch", "origin", "pull/42/head:pr-head"], cwd="/tmp/fake-repo")
-        mock_git.assert_any_call(["merge", "--squash", "pr-head"], cwd="/tmp/fake-repo")
+        mock_git.assert_any_call(["merge", "--squash", "pr-head"], cwd="/tmp/fake-repo", env=ANY)
 
 
 @pytest.mark.asyncio
