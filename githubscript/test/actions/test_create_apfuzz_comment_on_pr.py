@@ -225,3 +225,48 @@ async def test_comment_with_multiple_configs(
     assert "### no-restrictive-starts" in body
     assert "Success: 3480" in body
     assert "Success: 3200" in body
+
+
+@pytest.mark.asyncio
+async def test_check_task_has_spoiler_with_description(
+    fuzz_comment_context,
+    mock_queue,
+    mock_is_task_coming_from_pr,
+    mock_response,
+    mock_apdiff,
+):
+    fuzz_comment_context.task["payload"]["fuzz-tasks"] = [
+        {"task-id": "fuzz-task-check", "extra-args": "check-something"},
+    ]
+
+    mock_check_report = {
+        "stats": {
+            "total": 100,
+            "success": 80,
+            "failure": 5,
+            "timeout": 0,
+            "ignored": 15,
+        },
+        "errors": {},
+    }
+
+    fuzz_comment_context.session.get = Mock(
+        side_effect=[
+            mock_response(mock_apdiff),
+            mock_response(mock_check_report),
+            mock_response({"previous_results": []}),
+        ]
+    )
+
+    with patch("githubscript.actions.Queue", mock_queue):
+        with patch(
+            "githubscript.actions.is_task_coming_from_pr", mock_is_task_coming_from_pr
+        ):
+            await create_apfuzz_comment_on_pr(fuzz_comment_context, ["97"])
+
+    call_args = fuzz_comment_context.github.post.call_args
+    body = call_args[1]["data"]["body"]
+
+    assert "❌" in body
+    assert "<details>" in body
+    assert "Fuzz task fuzz-task-check" in body

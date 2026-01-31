@@ -32,6 +32,9 @@ def mock_queue():
             {"name": f"public/fuzz_output_{task_id}.zip"},
         ]
     }
+    mock.return_value.task.side_effect = lambda task_id: {
+        "metadata": {"description": f"Fuzz task {task_id}"}
+    }
     return mock
 
 
