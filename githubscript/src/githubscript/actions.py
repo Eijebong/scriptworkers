@@ -326,10 +326,11 @@ async def _build_fuzz_comment_section(
 
     if is_check:
         task_desc = queue.task(fuzz_task_id).get("metadata", {}).get("description", "")
-        summary = f"Details"
+        details_body = ""
         if task_desc:
-            section += f"{task_desc}\n\n"
-        section += f"<details>\n<summary>{summary}</summary>\n\n{body}\n</details>\n"
+            details_body += f"{task_desc}\n\n"
+        details_body += body
+        section += f"<details>\n<summary>Details</summary>\n\n{details_body}\n</details>\n"
     else:
         section += body
 
