@@ -16,3 +16,5 @@ tasks:
       parent: scriptworker-base
     githubscript:
       parent: scriptworker-base
+    publishscript:
+      parent: scriptworker-base
