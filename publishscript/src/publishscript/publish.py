@@ -134,11 +134,11 @@ async def publish(context):
 
     if expectations_task_id:
         expectations_patch = await _download_artifact(
-            context.session, queue, expectations_task_id, "public/expectations.diff"
+            context.session, queue, expectations_task_id, "public/expectations.patch"
         )
         patch_files.append(expectations_patch)
 
-    lock_patch = await _download_artifact(context.session, queue, diff_task_id, "public/lock.diff")
+    lock_patch = await _download_artifact(context.session, queue, diff_task_id, "public/build/lock.diff")
     patch_files.append(lock_patch)
 
     try:
