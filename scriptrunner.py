@@ -41,7 +41,7 @@ with open("scriptworker.yaml", "w") as fd:
     fd.write(
         CONFIG.format(
             worker_type=worker_type,
-            worker_id=script_name,
+            worker_id=worker_type,
             task_script=script_name,
         )
     )
